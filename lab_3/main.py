@@ -27,11 +27,15 @@ def is_valid_row(row: dict, i: int) -> bool:
     """
     for data_type in row.keys():
         if not re.fullmatch(PATTERNS[data_type], row[data_type]):
-            print(data_type, row)
             return False
     return True
 
 def find_invalid_rows(rows: List[dict]) -> List[int]:
+    """
+    среди строк ищет те, в которых есть хотя бы одно не соответствие паттерну
+    :param rows: строки для поиска
+    :return: массив номеров невалидных строк
+    """
     invalid_rows = []
 
     for i, row in enumerate(rows):
@@ -40,12 +44,15 @@ def find_invalid_rows(rows: List[dict]) -> List[int]:
     return invalid_rows
 
 def main() -> None:
+    """
+    загружает csv файла строки, находит невалидные строки и получает их контрольную сумму
+    :return: None
+    """
     rows = read_csv(CSV_PATH, 'utf-16', ';')
     invalid_rows = find_invalid_rows(rows)
     control_sum = calculate_checksum(invalid_rows)
 
     serialize_result(VARIANT, control_sum)
-    print(f"Контрольная сумма: {control_sum}")
 
 if __name__ == "__main__":
     main()
