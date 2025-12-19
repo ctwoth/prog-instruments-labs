@@ -10,7 +10,7 @@ import hashlib
 import random
 from collections import Counter
 
-class card_manager:
+class CardManager:
     @staticmethod
     def generate_valid_card(card_type):
 # Выбираем BIN для типа карты
@@ -21,7 +21,7 @@ class card_manager:
         digits = [int(d) for d in bin_prefix]
         digits.extend([random.randint(0, 9) for _ in range(length - len(digits) - 1)])
 # Вычисляем контрольную цифру по алгоритму Луна
-        check_digit = card_manager.calculate_luhn_check_digit(digits)
+        check_digit = CardManager.calculate_luhn_check_digit(digits)
         digits.append(check_digit)
 
         return ''.join(map(str, digits))
@@ -107,7 +107,7 @@ class card_manager:
                     end = core_range * (iteration + 1) if iteration != free_cores - 1 else num_range
 
                     results.append(p.apply_async(
-                        card_manager.hash_search,
+                        CardManager.hash_search,
                         (card_bin, last_nums, start, end, target_hash)
                         )
                     )
@@ -131,7 +131,7 @@ class card_manager:
 
         return None
 
-class file_utils:
+class FileUtils:
     @staticmethod
     def load_in_json(path, data):
         with open(path, 'w') as json_file:
@@ -207,7 +207,7 @@ def check_sets(sets) -> None:
 class MainWindow(QMainWindow):
     def __init__(self, sets_path: str):
         super().__init__()
-        self.sets = file_utils.load_from_json(sets_path)
+        self.sets = FileUtils.load_from_json(sets_path)
         check_sets(self.sets)
         self.setWindowTitle("Карточный дешифратор")
         self.setFixedWidth(600)
@@ -219,7 +219,7 @@ class MainWindow(QMainWindow):
 
     #text widgets
         self.enc_params = QTextEdit()
-        self.enc_params.setText(file_utils.load_from_txt(sets_path))
+        self.enc_params.setText(FileUtils.load_from_txt(sets_path))
         self.enc_params.setReadOnly(True)
         self.result = QTextEdit()
         self.result.setReadOnly(True)
@@ -253,17 +253,17 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(container)
 
     def visa_card_gen(self):
-        card_num = card_manager.generate_valid_card('visa')
+        card_num = CardManager.generate_valid_card('visa')
 
         self.card_num_edit.setText(card_num)
         return
 
     def decode(self):
-        number = card_manager.find_card_from_hash(self.sets['bins'], self.sets['last_numbers'], self.sets['hash'])
+        number = CardManager.find_card_from_hash(self.sets['bins'], self.sets['last_numbers'], self.sets['hash'])
 
         if number:
             self.result.setText(number)
-            file_utils.load_in_txt(number, self.sets['save_path'])
+            FileUtils.load_in_txt(number, self.sets['save_path'])
         else:
             self.result.setText("Не удалось найти карту")
 
@@ -272,7 +272,7 @@ class MainWindow(QMainWindow):
 
         for cores in range(1, int(1.5*mp.cpu_count())):
             start = time.time()
-            card_manager.find_card_from_hash(self.sets['bins'], self.sets['last_numbers'], self.sets['hash'], cores)
+            CardManager.find_card_from_hash(self.sets['bins'], self.sets['last_numbers'], self.sets['hash'], cores)
             work_time = time.time() - start
 
             statistic.append((cores, work_time))
@@ -286,7 +286,7 @@ class MainWindow(QMainWindow):
             self.result.setText("Некорректный номер карты")
             return
 
-        if card_manager.alg_luhn(card_num):
+        if CardManager.alg_luhn(card_num):
             self.result.setText("Карта валидна")
         else:
             self.result.setText("Карта невалидна")
