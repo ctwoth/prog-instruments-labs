@@ -13,16 +13,19 @@ from collections import Counter
 
 class CardManager:
 
-    @staticmethod
-    def generate_valid_card(card_type):
-        # Выбираем BIN для типа карты
-        bins = {
+    def __init__(self):
+        # Популярные BIN'ы для разных типов карт
+        self.bins = {
             'visa': ['4'],
             'mastercard': ['51', '52', '53', '54', '55', '2221', '2720'],
             'amex': ['34', '37'],
-            'mir': ['2200', '2204'],
+            'mir': ['2200', '2204']
         }
-        bin_prefix = random.choice( bins.get( card_type, ['4'] ) )
+
+    @staticmethod
+    def generate_valid_card(self, card_type: str) -> str:
+        # Выбираем BIN для типа карты
+        bin_prefix = random.choice( self.bins.get( card_type, ['4'] ) )
 
         # Генерируем остальные цифры (кроме последней - контрольной)
         length = 16 if card_type != 'amex' else 15
@@ -36,7 +39,7 @@ class CardManager:
         return ''.join(map(str, digits))
 
     @staticmethod
-    def calculate_luhn_check_digit(digits) :
+    def calculate_luhn_check_digit(self, digits: list) -> int :
         total = 0
         for i, digit in enumerate(reversed(digits)):
             if i % 2 == 0:
@@ -49,7 +52,7 @@ class CardManager:
         return ( 10 - (total % 10) ) % 10
 
     @staticmethod
-    def generate_bulk_with_statistics(self, count = 100):
+    def generate_bulk_with_statistics(self, count: int = 100) -> dict:
         cards = []
         first_digit_stats = Counter()
 
@@ -77,7 +80,7 @@ class CardManager:
         }
 
     @staticmethod
-    def calculate_anomaly_score(self, stats, total):
+    def calculate_anomaly_score(stats: Counter, total: int) -> float:
         #Реальная статистика первых цифр карт (примерная)
         expected_ratios = {
             '4': 0.4,  #Visa
@@ -95,7 +98,7 @@ class CardManager:
         return round(score, 4)
 
     @staticmethod
-    def alg_luhn(num_str):
+    def alg_luhn_check(self, num_str: str) -> bool:
         total = 0
 
         for i, digit in enumerate( reversed(num_str) ):
@@ -110,11 +113,11 @@ class CardManager:
         return total % 10 == 0
 
     @staticmethod
-    def hashing_card(num):
+    def hashing_card(num: str) -> str:
         return hashlib.sha224( num.encode() ).hexdigest()
 
     @staticmethod
-    def find_card_from_hash( bins, last_nums, target_hash, free_cores = mp.cpu_count() ):
+    def find_card_from_hash( bins: list[str], last_nums: str, target_hash: str, free_cores: int = mp.cpu_count() ) -> str:
         num_range = 10**( 16 - 6 - len(last_nums) )
         core_range = num_range // free_cores
 
@@ -141,11 +144,11 @@ class CardManager:
         return None
 
     @staticmethod
-    def hash_search(card_bin, last_nums, start, end, target_hash):
+    def hash_search(card_bin: str, last_nums: str, start: int, end: int, target_hash: str) -> str:
         for middle_nums in range(start, end):
             card = f"{card_bin}{middle_nums}{last_nums}"
 
-            rand_hash = card_bin.hashing_card(card)
+            rand_hash = CardManager.hashing_card(card)
 
             if rand_hash == target_hash:
                 return card
@@ -156,24 +159,24 @@ class CardManager:
 class FileUtils:
 
     @staticmethod
-    def load_in_json(path, data):
+    def load_in_json(path: str, data: dict) -> None:
         with open(path, 'w') as json_file:
             json.dump(data, json_file)
 
     @staticmethod
-    def load_from_json(path):
+    def load_from_json(path: str) -> dict:
         with open(path, 'r') as json_file:
             json_data = json.load(json_file)
             return json_data
 
     @staticmethod
-    def load_from_txt(path, enc = 'utf-8'):
+    def load_from_txt(path: str, enc = 'utf-8') -> str:
         with open(path, 'r', encoding=enc) as file:
             data = file.read()
             return data
 
     @staticmethod
-    def load_in_txt(data, path, enc = 'utf-8'):
+    def load_in_txt(path: str, data: dict, enc = 'utf-8') -> None:
         with open(path, 'w', encoding= enc) as file:
             file.write(data)
 
@@ -181,7 +184,7 @@ class FileUtils:
 class Graph:
 
     @staticmethod
-    def draw_plot(data):
+    def draw_plot(data: list[ (int, float) ] ) -> None:
         fig = plt.figure(figsize=(30, 5))
         x = [x[0] for x in data]
         y = [x[1] for x in data]
@@ -194,7 +197,7 @@ class Graph:
         plt.show()
 
     @staticmethod
-    def draw_bar(data):
+    def draw_bar(data: list[ (int, float) ] ) -> None:
         fig = plt.figure(figsize=(30, 5))
         x = [x[0] for x in data]
         y = [x[1] for x in data]
@@ -210,17 +213,17 @@ class Graph:
 class Parser:
 
     @staticmethod
-    def validate_args(args):
+    def validate_args(args: argparse.Namespace) -> None:
         if not os.path.isfile(args.settings):
             raise ValueError("setting file not exist")
 
     @staticmethod
-    def parse():
+    def parse() -> argparse.Namespace:
         parser = argparse.ArgumentParser(description="program work settings")
 
-        parser.add_argument("-s", 
+        parser.add_argument("-s",
                              "--settings",
-                             type=str, 
+                             type=str,
                              default="settings.json",
                              help="Path to settings in JSON-file")
 
@@ -230,7 +233,7 @@ class Parser:
         return args
 
 
-def check_sets(sets) -> None:
+def check_sets(sets: dict) -> None:
     if not os.path.isfile(sets["save_path"]):
         raise ValueError("Wrong path to initial file")
 
@@ -245,6 +248,7 @@ def check_sets(sets) -> None:
 
 
 class MainWindow(QMainWindow):
+
     def __init__(self, sets_path: str):
         super().__init__()
         self.sets = FileUtils.load_from_json(sets_path)
@@ -292,13 +296,13 @@ class MainWindow(QMainWindow):
         container.setLayout(layout)
         self.setCentralWidget(container)
 
-    def visa_card_gen(self):
+    def visa_card_gen(self) -> None:
         card_num = CardManager.generate_valid_card('visa')
 
         self.card_num_edit.setText(card_num)
         return
 
-    def decode(self):
+    def decode(self) -> None:
         number = CardManager.find_card_from_hash( self.sets['bins'], self.sets['last_numbers'], self.sets['hash'] )
 
         if number:
@@ -307,7 +311,7 @@ class MainWindow(QMainWindow):
         else:
             self.result.setText("Не удалось найти карту")
 
-    def stat_decode(self):
+    def stat_decode(self) -> None:
         statistic = []
 
         for cores in range( 1, int( 1.5 * mp.cpu_count() ) ):
@@ -319,7 +323,7 @@ class MainWindow(QMainWindow):
         Graph.draw_plot(statistic)
         Graph.draw_bar(statistic)
 
-    def card_num_check(self):
+    def card_num_check(self) -> None:
         card_num = self.card_num_edit.text()
 
         if not card_num.isdigit() or len(card_num) != 16:
@@ -332,7 +336,7 @@ class MainWindow(QMainWindow):
             self.result.setText("Карта невалидна")
 
 
-def main():
+def main() -> None:
     try:
         args = Parser.parse()
 
