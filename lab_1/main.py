@@ -10,21 +10,26 @@ import hashlib
 import random
 from collections import Counter
 
+
 class CardManager:
+
     @staticmethod
     def generate_valid_card(card_type):
 # Выбираем BIN для типа карты
         bins = {'visa': ['4'], 'mastercard': ['51', '52', '53', '54', '55', '2221', '2720'], 'amex': ['34', '37'],'mir': ['2200', '2204']}
         bin_prefix = random.choice(bins.get(card_type, ['4']))
+
 # Генерируем остальные цифры (кроме последней - контрольной)
         length = 16 if card_type != 'amex' else 15
         digits = [int(d) for d in bin_prefix]
         digits.extend([random.randint(0, 9) for _ in range(length - len(digits) - 1)])
+
 # Вычисляем контрольную цифру по алгоритму Луна
         check_digit = CardManager.calculate_luhn_check_digit(digits)
         digits.append(check_digit)
 
         return ''.join(map(str, digits))
+
     @staticmethod
     def calculate_luhn_check_digit(digits) :
         total = 0
@@ -32,8 +37,10 @@ class CardManager:
             if i % 2 == 0:
                 doubled = digit * 2
                 total += doubled if doubled < 10 else doubled - 9
+
             else:
                 total += digit
+
         return (10 - (total % 10)) % 10
 
     @staticmethod
@@ -68,6 +75,7 @@ class CardManager:
                            '2': 0.1,  #Мир и другие
                            '6': 0.05  #Discover и др.
         }
+
         score = 0
         for digit, expected_ratio in expected_ratios.items():
             actual_ratio = stats.get(digit, 0) / total
@@ -93,6 +101,7 @@ class CardManager:
     @staticmethod
     def hashing_card(num):
         return hashlib.sha224(num.encode()).hexdigest()
+
     @staticmethod
     def find_card_from_hash(bins, last_nums, target_hash, free_cores = mp.cpu_count()):
         num_range = 10**(16 - 6 - len(last_nums))
@@ -119,6 +128,7 @@ class CardManager:
                     return r
 
         return None
+
     @staticmethod
     def hash_search(card_bin, last_nums, start, end, target_hash):
         for middle_nums in range(start, end):
@@ -131,27 +141,34 @@ class CardManager:
 
         return None
 
+
 class FileUtils:
+
     @staticmethod
     def load_in_json(path, data):
         with open(path, 'w') as json_file:
             json.dump(data, json_file)
+
     @staticmethod
     def load_from_json(path):
         with open(path, 'r') as json_file:
             json_data = json.load(json_file)
             return json_data
+
     @staticmethod
     def load_from_txt(path, enc = 'utf-8'):
         with open(path, 'r', encoding=enc) as file:
             data = file.read()
             return data
+
     @staticmethod
     def load_in_txt(data, path, enc = 'utf-8'):
         with open(path, 'w', encoding= enc) as file:
             file.write(data)
 
+
 class Graph:
+
     @staticmethod
     def draw_plot(data):
         fig = plt.figure(figsize=(30, 5))
@@ -164,6 +181,7 @@ class Graph:
 
         plt.plot(x,y, color='navy', linestyle='--', marker='x', linewidth=1, markersize=4)
         plt.show()
+
     @staticmethod
     def draw_bar(data):
         fig = plt.figure(figsize=(30, 5))
@@ -177,11 +195,14 @@ class Graph:
         plt.bar(x, y, color='blue', width=0.5)
         plt.show()
 
+
 class Parser:
+
     @staticmethod
     def validate_args(args):
         if not os.path.isfile(args.settings):
             raise ValueError("setting file not exist")
+
     @staticmethod
     def parse():
         parser = argparse.ArgumentParser(description="program work settings")
@@ -193,13 +214,17 @@ class Parser:
 
         return args
 
+
 def check_sets(sets) -> None:
     if not os.path.isfile(sets["save_path"]):
         raise ValueError("Wrong path to initial file")
+
     if len(sets["last_numbers"]) != 4:
         raise ValueError("not 4 numbers")
+
     if len(sets["hash"]) < 10:
         raise ValueError("Hash doesn't look correct...")
+
     if len(sets["bins"])  == 0:
         raise ValueError("Empty bank BINs")
 
@@ -291,6 +316,7 @@ class MainWindow(QMainWindow):
         else:
             self.result.setText("Карта невалидна")
 
+
 def main():
     try:
         args = Parser.parse()
@@ -302,6 +328,7 @@ def main():
 
     except Exception as error:
         print("Error!\n\t", error)
+
 
 if __name__ == '__main__':
     main()
