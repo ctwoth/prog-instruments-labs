@@ -41,4 +41,21 @@ class AsyncImageDownloader:
         self.success_count = 0
         self.error_count = 0
 
-        Path(config['TARGET_DIRECTORY']).mkdir(parents=True, exist_ok=True)
+        Path(self.config['TARGET_DIRECTORY']).mkdir(parents=True, exist_ok=True)
+    
+    async def _get_session(self):
+        """Создаём aiohttp сессию"""
+        if not self.session:
+            timeout = aiohttp.ClientTimeout(total=self.config['TIMEOUT'])
+            connector = aiohttp.TCPConnector(limit=self.config['MAX_CONCURRENT'])
+            self.session = aiohttp.ClientSession(
+                timeout=timeout,
+                connector=connector
+            )
+            self.semaphore = asyncio.Semaphore(self.config['MAX_CONCURRENT'])
+        return self.session
+
+    async def download_all(self):
+        """Качаем все изображения"""
+        # ещё нет)
+
