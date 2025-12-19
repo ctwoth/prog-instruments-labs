@@ -164,6 +164,26 @@ class AsyncImageDownloader:
         logger.info(f"Successfully downloaded: {self.success_count}")
         logger.info(f"Failed: {self.error_count}")
         logger.info(f"Directory: {self.config['TARGET_DIRECTORY']}")
+        
+        self._save_report(elapsed)
+
+    def _save_report(self, elapsed_time: float):
+        """Сохраняем отчёт о скачке в файл внутри директории"""
+        report = {
+            "timestamp": datetime.now().isoformat(),
+            "total_urls": self.success_count + self.error_count,
+            "successful": self.success_count,
+            "failed": self.error_count,
+            "elapsed_seconds": round(elapsed_time, 2),
+            "target_directory": self.config['TARGET_DIRECTORY'],
+            "config": self.config
+        }
+
+        report_path = Path(self.config['TARGET_DIRECTORY']) / "download_report.json" # Т.е директория куда скачали + имя файла 
+        with open(report_path, 'w', encoding='utf-8') as f:
+            json.dump(report, f, indent=4)
+
+        logger.info(f"Report saved to: {report_path}")
 
 
 
