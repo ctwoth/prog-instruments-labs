@@ -1,0 +1,8 @@
+{
+  "TARGET_DIRECTORY": "./downloads",
+  "CSV_PATH": "./urls.csv",
+  "MAX_CONCURRENT": 20,
+  "TIMEOUT": 30,
+  "RETRY_COUNT": 3,
+  "USER_AGENT": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+}
