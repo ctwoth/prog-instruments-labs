@@ -15,16 +15,16 @@ class CardManager:
 
     @staticmethod
     def generate_valid_card(card_type):
-# Выбираем BIN для типа карты
+        # Выбираем BIN для типа карты
         bins = {'visa': ['4'], 'mastercard': ['51', '52', '53', '54', '55', '2221', '2720'], 'amex': ['34', '37'],'mir': ['2200', '2204']}
         bin_prefix = random.choice(bins.get(card_type, ['4']))
 
-# Генерируем остальные цифры (кроме последней - контрольной)
+        # Генерируем остальные цифры (кроме последней - контрольной)
         length = 16 if card_type != 'amex' else 15
         digits = [int(d) for d in bin_prefix]
         digits.extend([random.randint(0, 9) for _ in range(length - len(digits) - 1)])
 
-# Вычисляем контрольную цифру по алгоритму Луна
+        # Вычисляем контрольную цифру по алгоритму Луна
         check_digit = CardManager.calculate_luhn_check_digit(digits)
         digits.append(check_digit)
 
@@ -54,7 +54,7 @@ class CardManager:
             cards.append(card)
             first_digit_stats[card[0]] += 1
 
-# Проверка закона Бенфорда для первых цифр
+        # Проверка закона Бенфорда для первых цифр
         benford_law = {str(i): round(count * (0.301 if i == 1 else
                                               0.176 if i == 2 else
                                               0.125 if i == 3 else
@@ -68,7 +68,7 @@ class CardManager:
 
     @staticmethod
     def calculate_anomaly_score(self, stats, total):
-#Реальная статистика первых цифр карт (примерная)
+        #Реальная статистика первых цифр карт (примерная)
         expected_ratios = {'4': 0.4,  #Visa
                            '5': 0.3,  #Mastercard
                            '3': 0.15,  #Amex
@@ -237,12 +237,12 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Карточный дешифратор")
         self.setFixedWidth(600)
 
-    #labels
+        #labels
         self.enc_params_label = QLabel("Данные дешифровки:")
         self.card_num_label = QLabel("Номер карточки:")
         self.result_label = QLabel("Результат:")
 
-    #text widgets
+        #text widgets
         self.enc_params = QTextEdit()
         self.enc_params.setText(FileUtils.load_from_txt(sets_path))
         self.enc_params.setReadOnly(True)
@@ -250,7 +250,7 @@ class MainWindow(QMainWindow):
         self.result.setReadOnly(True)
         self.card_num_edit = QLineEdit()
 
-    #buttons
+        #buttons
         self.decode_button = QPushButton("найти номер карты")
         self.decode_button.clicked.connect(self.decode)
         self.stat_decode_button = QPushButton("статистика декодирования")
@@ -260,7 +260,7 @@ class MainWindow(QMainWindow):
         self.generate_button = QPushButton("сгенерировать номер карты")
         self.generate_button.clicked.connect(self.visa_card_gen)
 
-    #construct all widgets into app
+        #construct all widgets into app
         layout = QVBoxLayout()
         layout.addWidget(self.enc_params_label)
         layout.addWidget(self.enc_params)
