@@ -1,18 +1,19 @@
 import os
 import sys
 import time
-import multiprocessing as mp
+import json
+import random
+import hashlib
 import argparse
+import multiprocessing as mp
+
+from collections import Counter
 from matplotlib import pyplot as plt
 from PyQt6.QtWidgets import QApplication, QTextEdit, QMainWindow, QPushButton, QLabel, QVBoxLayout, QWidget, QLineEdit
-import json
-import hashlib
-import random
-from collections import Counter
 
 
 class CardManager:
-
+    """funks for card operations"""
     def __init__(self):
         # Популярные BIN'ы для разных типов карт
         self.bins = {
@@ -24,6 +25,12 @@ class CardManager:
 
     @staticmethod
     def generate_valid_card(self, card_type: str) -> str:
+        """
+        generate a valid card number for many card types
+        :param self:
+        :param card_type:
+        :return: valid card number
+        """
         # Выбираем BIN для типа карты
         bin_prefix = random.choice( self.bins.get( card_type, ['4'] ) )
 
@@ -40,6 +47,12 @@ class CardManager:
 
     @staticmethod
     def calculate_luhn_check_digit(self, digits: list) -> int :
+        """
+        calculate control sum of luhn algorithm
+        :param self:
+        :param digits: card number
+        :return: value of luhn algorithm
+        """
         total = 0
         for i, digit in enumerate(reversed(digits)):
             if i % 2 == 0:
@@ -53,6 +66,12 @@ class CardManager:
 
     @staticmethod
     def generate_bulk_with_statistics(self, count: int = 100) -> dict:
+        """
+        generates cards and collect statistic
+        :param self:
+        :param count:
+        :return: cards statistic
+        """
         cards = []
         first_digit_stats = Counter()
 
@@ -81,7 +100,13 @@ class CardManager:
 
     @staticmethod
     def calculate_anomaly_score(stats: Counter, total: int) -> float:
-        #Реальная статистика первых цифр карт (примерная)
+        """
+        calculating anomaly's in cards
+        :param stats:
+        :param total:
+        :return: value of anomaly
+        """
+        # Реальная статистика первых цифр карт (примерная)
         expected_ratios = {
             '4': 0.4,  #Visa
             '5': 0.3,  #Mastercard
@@ -99,6 +124,12 @@ class CardManager:
 
     @staticmethod
     def alg_luhn_check(self, num_str: str) -> bool:
+        """
+        calculate control sum of card
+        :param self:
+        :param num_str: card number
+        :return: is card correct
+        """
         total = 0
 
         for i, digit in enumerate( reversed(num_str) ):
@@ -114,10 +145,19 @@ class CardManager:
 
     @staticmethod
     def hashing_card(num: str) -> str:
+        """ :return: card sha224-hash """
         return hashlib.sha224( num.encode() ).hexdigest()
 
     @staticmethod
     def find_card_from_hash( bins: list[str], last_nums: str, target_hash: str, free_cores: int = mp.cpu_count() ) -> str:
+        """
+        takes info about card type, last 4 digits, and it's hash to find card number
+        :param bins:
+        :param last_nums:
+        :param target_hash:
+        :param free_cores:
+        :return: finded card number
+        """
         num_range = 10**( 16 - 6 - len(last_nums) )
         core_range = num_range // free_cores
 
@@ -145,6 +185,7 @@ class CardManager:
 
     @staticmethod
     def hash_search(card_bin: str, last_nums: str, start: int, end: int, target_hash: str) -> str:
+        """direct search of hash"""
         for middle_nums in range(start, end):
             card = f"{card_bin}{middle_nums}{last_nums}"
 
@@ -157,34 +198,43 @@ class CardManager:
 
 
 class FileUtils:
-
+    """funks for save|load data in|from .txt and .json files"""
     @staticmethod
     def load_in_json(path: str, data: dict) -> None:
+        """load data in json"""
         with open(path, 'w') as json_file:
             json.dump(data, json_file)
 
     @staticmethod
     def load_from_json(path: str) -> dict:
+        """:return json data sa dict"""
         with open(path, 'r') as json_file:
             json_data = json.load(json_file)
             return json_data
 
     @staticmethod
     def load_from_txt(path: str, enc = 'utf-8') -> str:
+        """:return txt data sa string"""
         with open(path, 'r', encoding=enc) as file:
             data = file.read()
             return data
 
     @staticmethod
     def load_in_txt(path: str, data: dict, enc = 'utf-8') -> None:
+        """load data in txt file"""
         with open(path, 'w', encoding= enc) as file:
             file.write(data)
 
 
 class Graph:
-
+    """funks for draws graphs"""
     @staticmethod
     def draw_plot(data: list[ (int, float) ] ) -> None:
+        """
+        simple graphic that shows how long calculates card number, with variable num of cores
+        :param data:
+        :return:
+        """
         fig = plt.figure(figsize=(30, 5))
         x = [x[0] for x in data]
         y = [x[1] for x in data]
@@ -198,6 +248,11 @@ class Graph:
 
     @staticmethod
     def draw_bar(data: list[ (int, float) ] ) -> None:
+        """
+        simple bar-graphic that shows how long calculates card number, with variable num of cores
+        :param data:
+        :return:
+        """
         fig = plt.figure(figsize=(30, 5))
         x = [x[0] for x in data]
         y = [x[1] for x in data]
@@ -211,14 +266,16 @@ class Graph:
 
 
 class Parser:
-
+    """parser of starting params"""
     @staticmethod
     def validate_args(args: argparse.Namespace) -> None:
+        """checking existing of setting file"""
         if not os.path.isfile(args.settings):
             raise ValueError("setting file not exist")
 
     @staticmethod
     def parse() -> argparse.Namespace:
+        """parsing and validate args"""
         parser = argparse.ArgumentParser(description="program work settings")
 
         parser.add_argument("-s",
@@ -234,6 +291,7 @@ class Parser:
 
 
 def check_sets(sets: dict) -> None:
+    """validate of args in settings.json"""
     if not os.path.isfile(sets["save_path"]):
         raise ValueError("Wrong path to initial file")
 
@@ -248,20 +306,24 @@ def check_sets(sets: dict) -> None:
 
 
 class MainWindow(QMainWindow):
-
+    """QT-window for application"""
     def __init__(self, sets_path: str):
+        """
+        window initialization
+        :param sets_path:
+        """
         super().__init__()
         self.sets = FileUtils.load_from_json(sets_path)
         check_sets(self.sets)
         self.setWindowTitle("Карточный дешифратор")
         self.setFixedWidth(600)
 
-        #labels
+        # labels
         self.enc_params_label = QLabel("Данные дешифровки:")
         self.card_num_label = QLabel("Номер карточки:")
         self.result_label = QLabel("Результат:")
 
-        #text widgets
+        # text widgets
         self.enc_params = QTextEdit()
         self.enc_params.setText( FileUtils.load_from_txt( sets_path ) )
         self.enc_params.setReadOnly(True)
@@ -269,7 +331,7 @@ class MainWindow(QMainWindow):
         self.result.setReadOnly(True)
         self.card_num_edit = QLineEdit()
 
-        #buttons
+        # buttons
         self.decode_button = QPushButton("найти номер карты")
         self.decode_button.clicked.connect(self.decode)
         self.stat_decode_button = QPushButton("статистика декодирования")
@@ -279,7 +341,7 @@ class MainWindow(QMainWindow):
         self.generate_button = QPushButton("сгенерировать номер карты")
         self.generate_button.clicked.connect(self.visa_card_gen)
 
-        #construct all widgets into app
+        # construct all widgets into app
         layout = QVBoxLayout()
         layout.addWidget(self.enc_params_label)
         layout.addWidget(self.enc_params)
@@ -297,12 +359,14 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(container)
 
     def visa_card_gen(self) -> None:
+        """generate correct visa card"""
         card_num = CardManager.generate_valid_card('visa')
 
         self.card_num_edit.setText(card_num)
         return
 
     def decode(self) -> None:
+        """finding card number from given hash"""
         number = CardManager.find_card_from_hash( self.sets['bins'], self.sets['last_numbers'], self.sets['hash'] )
 
         if number:
@@ -312,6 +376,7 @@ class MainWindow(QMainWindow):
             self.result.setText("Не удалось найти карту")
 
     def stat_decode(self) -> None:
+        """repeat decoding card in cycle for many cores num"""
         statistic = []
 
         for cores in range( 1, int( 1.5 * mp.cpu_count() ) ):
@@ -324,6 +389,7 @@ class MainWindow(QMainWindow):
         Graph.draw_bar(statistic)
 
     def card_num_check(self) -> None:
+        """checks the card number for validity"""
         card_num = self.card_num_edit.text()
 
         if not card_num.isdigit() or len(card_num) != 16:
