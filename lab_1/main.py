@@ -16,13 +16,18 @@ class CardManager:
     @staticmethod
     def generate_valid_card(card_type):
         # Выбираем BIN для типа карты
-        bins = {'visa': ['4'], 'mastercard': ['51', '52', '53', '54', '55', '2221', '2720'], 'amex': ['34', '37'],'mir': ['2200', '2204']}
-        bin_prefix = random.choice(bins.get(card_type, ['4']))
+        bins = {
+            'visa': ['4'],
+            'mastercard': ['51', '52', '53', '54', '55', '2221', '2720'],
+            'amex': ['34', '37'],
+            'mir': ['2200', '2204'],
+        }
+        bin_prefix = random.choice( bins.get( card_type, ['4'] ) )
 
         # Генерируем остальные цифры (кроме последней - контрольной)
         length = 16 if card_type != 'amex' else 15
-        digits = [int(d) for d in bin_prefix]
-        digits.extend([random.randint(0, 9) for _ in range(length - len(digits) - 1)])
+        digits = [ int(d) for d in bin_prefix ]
+        digits.extend( [ random.randint(0, 9) for _ in range( length - len(digits) - 1 ) ] )
 
         # Вычисляем контрольную цифру по алгоритму Луна
         check_digit = CardManager.calculate_luhn_check_digit(digits)
@@ -41,7 +46,7 @@ class CardManager:
             else:
                 total += digit
 
-        return (10 - (total % 10)) % 10
+        return ( 10 - (total % 10) ) % 10
 
     @staticmethod
     def generate_bulk_with_statistics(self, count = 100):
@@ -52,7 +57,7 @@ class CardManager:
             card_type = random.choice(list(self.bins.keys()))
             card = self.generate_valid_card(card_type)
             cards.append(card)
-            first_digit_stats[card[0]] += 1
+            first_digit_stats[ card[0] ] += 1
 
         # Проверка закона Бенфорда для первых цифр
         benford_law = {str(i): round(count * (0.301 if i == 1 else
@@ -64,16 +69,22 @@ class CardManager:
                                               0.058 if i == 7 else
                                               0.051 if i == 8 else 0.046), 2) for i in range(1, 10)}
 
-        return { 'cards': cards, 'first_digit_distribution': dict(first_digit_stats), 'benford_expected': benford_law, 'anomaly_score': self.calculate_anomaly_score(first_digit_stats, count)}
+        return {
+            'cards': cards,
+            'first_digit_distribution': dict(first_digit_stats),
+            'benford_expected': benford_law,
+            'anomaly_score': self.calculate_anomaly_score( first_digit_stats, count )
+        }
 
     @staticmethod
     def calculate_anomaly_score(self, stats, total):
         #Реальная статистика первых цифр карт (примерная)
-        expected_ratios = {'4': 0.4,  #Visa
-                           '5': 0.3,  #Mastercard
-                           '3': 0.15,  #Amex
-                           '2': 0.1,  #Мир и другие
-                           '6': 0.05  #Discover и др.
+        expected_ratios = {
+            '4': 0.4,  #Visa
+            '5': 0.3,  #Mastercard
+            '3': 0.15,  #Amex
+            '2': 0.1,  #Мир и другие
+            '6': 0.05  #Discover и др.
         }
 
         score = 0
@@ -87,7 +98,7 @@ class CardManager:
     def alg_luhn(num_str):
         total = 0
 
-        for i, digit in enumerate(reversed(num_str)):
+        for i, digit in enumerate( reversed(num_str) ):
             num = int(digit)
             if i % 2 == 1:
                 num *= 2
@@ -100,11 +111,11 @@ class CardManager:
 
     @staticmethod
     def hashing_card(num):
-        return hashlib.sha224(num.encode()).hexdigest()
+        return hashlib.sha224( num.encode() ).hexdigest()
 
     @staticmethod
-    def find_card_from_hash(bins, last_nums, target_hash, free_cores = mp.cpu_count()):
-        num_range = 10**(16 - 6 - len(last_nums))
+    def find_card_from_hash( bins, last_nums, target_hash, free_cores = mp.cpu_count() ):
+        num_range = 10**( 16 - 6 - len(last_nums) )
         core_range = num_range // free_cores
 
         with mp.Pool(processes=free_cores) as p:
@@ -179,7 +190,7 @@ class Graph:
         plt.xlabel('кол-во процессов')
         plt.title('зависимость времени от числа процессов')
 
-        plt.plot(x,y, color='navy', linestyle='--', marker='x', linewidth=1, markersize=4)
+        plt.plot( x,y, color='navy', linestyle='--', marker='x', linewidth=1, markersize=4 )
         plt.show()
 
     @staticmethod
@@ -192,7 +203,7 @@ class Graph:
         plt.xlabel('кол-во процессов')
         plt.title('зависимость времени от числа процессов')
 
-        plt.bar(x, y, color='blue', width=0.5)
+        plt.bar( x, y, color='blue', width=0.5 )
         plt.show()
 
 
@@ -207,7 +218,11 @@ class Parser:
     def parse():
         parser = argparse.ArgumentParser(description="program work settings")
 
-        parser.add_argument("-s", "--settings",type=str, default="settings.json", help="Path to settings in JSON-file")
+        parser.add_argument("-s", 
+                             "--settings",
+                             type=str, 
+                             default="settings.json",
+                             help="Path to settings in JSON-file")
 
         args = parser.parse_args()
         Parser.validate_args(args)
@@ -244,7 +259,7 @@ class MainWindow(QMainWindow):
 
         #text widgets
         self.enc_params = QTextEdit()
-        self.enc_params.setText(FileUtils.load_from_txt(sets_path))
+        self.enc_params.setText( FileUtils.load_from_txt( sets_path ) )
         self.enc_params.setReadOnly(True)
         self.result = QTextEdit()
         self.result.setReadOnly(True)
@@ -284,7 +299,7 @@ class MainWindow(QMainWindow):
         return
 
     def decode(self):
-        number = CardManager.find_card_from_hash(self.sets['bins'], self.sets['last_numbers'], self.sets['hash'])
+        number = CardManager.find_card_from_hash( self.sets['bins'], self.sets['last_numbers'], self.sets['hash'] )
 
         if number:
             self.result.setText(number)
@@ -295,12 +310,12 @@ class MainWindow(QMainWindow):
     def stat_decode(self):
         statistic = []
 
-        for cores in range(1, int(1.5*mp.cpu_count())):
+        for cores in range( 1, int( 1.5 * mp.cpu_count() ) ):
             start = time.time()
-            CardManager.find_card_from_hash(self.sets['bins'], self.sets['last_numbers'], self.sets['hash'], cores)
+            CardManager.find_card_from_hash( self.sets['bins'], self.sets['last_numbers'], self.sets['hash'], cores )
             work_time = time.time() - start
 
-            statistic.append((cores, work_time))
+            statistic.append(( cores, work_time) )
         Graph.draw_plot(statistic)
         Graph.draw_bar(statistic)
 
