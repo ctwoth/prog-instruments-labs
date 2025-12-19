@@ -55,7 +55,39 @@ class AsyncImageDownloader:
             self.semaphore = asyncio.Semaphore(self.config['MAX_CONCURRENT'])
         return self.session
 
+    def _read_urls_from_csv(self) -> List[str]:
+        """Читаем URL из CSV файла"""
+        urls = []
+        try:
+            with open(self.config['CSV_PATH'], 'r', encoding='utf-8') as f:
+                reader = csv.reader(f)
+                for row in reader:
+                    if row:  # Проверяем, что строка не пустая
+                        url = row[0].strip()
+                        if url and url.startswith(('http://', 'https://')):
+                            urls.append(url)
+
+            logger.info(f"Loaded {len(urls)} URLs from {self.config['CSV_PATH']}")
+            return urls
+
+        except FileNotFoundError:
+            logger.error(f"CSV file not found: {self.config['CSV_PATH']}")
+            return []
+        except Exception as e:
+            logger.error(f"Error reading CSV: {e}")
+            return []
+
     async def download_all(self):
         """Качаем все изображения"""
-        # ещё нет)
+        urls = self._read_urls_from_csv()
+        if not urls:
+            logger.error("No URLs to download")
+            return
+
+        logger.info(f"Starting download of {len(urls)} images")
+        logger.info(f"Target directory: {self.config['TARGET_DIRECTORY']}")
+        logger.info(f"Max concurrent: {self.config['MAX_CONCURRENT']}")
+
+        start_time = datetime.now()
+
 
