@@ -34,7 +34,22 @@ def load_config(config_path: str) -> dict:
     except FileNotFoundError:
         logger.error(f"Config file not found: {config_path}")
         raise ValueError("file didn't exist")
-        
+
+
+def _get_filename_from_url(url: str) -> str:
+    """Извлечь имя файла из URL"""
+    parsed = urlparse(url)
+    filename = os.path.basename(parsed.path)
+
+    # Если имя файла не имеет расширения или пустое
+    if not filename or '.' not in filename:
+        filename = f"image_{hash(url) % 10000:04d}.jpg"
+
+    # Убедиться, что имя файла безопасное
+    filename = ''.join(c for c in filename if c.isalnum() or c in '._- ')
+
+    return filename
+
 
 class AsyncImageDownloader:
     def __init__(self, config_path: str = "config.json"):
@@ -184,6 +199,7 @@ class AsyncImageDownloader:
             json.dump(report, f, indent=4)
 
         logger.info(f"Report saved to: {report_path}")
+
 
 
 
