@@ -9,35 +9,36 @@ import multiprocessing as mp
 
 from collections import Counter
 from matplotlib import pyplot as plt
-from PyQt6.QtWidgets import QApplication, QTextEdit, QMainWindow, QPushButton, QLabel, QVBoxLayout, QWidget, QLineEdit
+from PyQt6.QtWidgets import QPushButton, QLabel, QVBoxLayout, QLineEdit
+from PyQt6.QtWidgets import QApplication, QTextEdit, QMainWindow, QWidget
 
+
+# Популярные BIN'ы для разных типов карт
+BINS = {
+    'visa': ['4'],
+    'mastercard': ['51', '52', '53', '54', '55', '2221', '2720'],
+    'amex': ['34', '37'],
+    'mir': ['2200', '2204']
+}
 
 class CardManager:
     """funks for card operations"""
-    def __init__(self):
-        # Популярные BIN'ы для разных типов карт
-        self.bins = {
-            'visa': ['4'],
-            'mastercard': ['51', '52', '53', '54', '55', '2221', '2720'],
-            'amex': ['34', '37'],
-            'mir': ['2200', '2204']
-        }
-
     @staticmethod
-    def generate_valid_card(self, card_type: str) -> str:
+    def generate_valid_card(card_type: str) -> str:
         """
         generate a valid card number for many card types
-        :param self:
         :param card_type:
         :return: valid card number
         """
         # Выбираем BIN для типа карты
-        bin_prefix = random.choice( self.bins.get( card_type, ['4'] ) )
+        bin_prefix = random.choice(BINS.get(card_type, ['4']))
 
         # Генерируем остальные цифры (кроме последней - контрольной)
         length = 16 if card_type != 'amex' else 15
-        digits = [ int(d) for d in bin_prefix ]
-        digits.extend( [ random.randint(0, 9) for _ in range( length - len(digits) - 1 ) ] )
+        digits = [int(d) for d in bin_prefix]
+
+        range_dig = range(length - len(digits) - 1)
+        digits.extend([random.randint(0, 9) for _ in range_dig])
 
         # Вычисляем контрольную цифру по алгоритму Луна
         check_digit = CardManager.calculate_luhn_check_digit(digits)
@@ -46,10 +47,9 @@ class CardManager:
         return ''.join(map(str, digits))
 
     @staticmethod
-    def calculate_luhn_check_digit(self, digits: list) -> int :
+    def calculate_luhn_check_digit(digits: list) -> int :
         """
         calculate control sum of luhn algorithm
-        :param self:
         :param digits: card number
         :return: value of luhn algorithm
         """
@@ -62,7 +62,7 @@ class CardManager:
             else:
                 total += digit
 
-        return ( 10 - (total % 10) ) % 10
+        return (10 - (total % 10)) % 10
 
     @staticmethod
     def generate_bulk_with_statistics(self, count: int = 100) -> dict:
@@ -79,27 +79,30 @@ class CardManager:
             card_type = random.choice(list(self.bins.keys()))
             card = self.generate_valid_card(card_type)
             cards.append(card)
-            first_digit_stats[ card[0] ] += 1
+            first_digit_stats[card[0]] += 1
 
         # Проверка закона Бенфорда для первых цифр
-        benford_law = {str(i): round(count * (0.301 if i == 1 else
-                                              0.176 if i == 2 else
-                                              0.125 if i == 3 else
-                                              0.097 if i == 4 else
-                                              0.079 if i == 5 else
-                                              0.067 if i == 6 else
-                                              0.058 if i == 7 else
-                                              0.051 if i == 8 else 0.046), 2) for i in range(1, 10)}
+        benford_law = {}
+        for i in range(1,10):
+            benford_law[str(i)] = count * (0.301 if i == 1 else
+                                           0.176 if i == 2 else
+                                           0.125 if i == 3 else
+                                           0.097 if i == 4 else
+                                           0.079 if i == 5 else
+                                           0.067 if i == 6 else
+                                           0.058 if i == 7 else
+                                           0.051 if i == 8 else 0.046)
+            benford_law[str(i)] = round(benford_law[str(i)], 2)
 
         return {
             'cards': cards,
             'first_digit_distribution': dict(first_digit_stats),
             'benford_expected': benford_law,
-            'anomaly_score': self.calculate_anomaly_score( first_digit_stats, count )
+            'anomaly_score': self.calc_anomaly_score(first_digit_stats, count)
         }
 
     @staticmethod
-    def calculate_anomaly_score(stats: Counter, total: int) -> float:
+    def calc_anomaly_score(stats: Counter, total: int) -> float:
         """
         calculating anomaly's in cards
         :param stats:
@@ -123,16 +126,15 @@ class CardManager:
         return round(score, 4)
 
     @staticmethod
-    def alg_luhn_check(self, num_str: str) -> bool:
+    def alg_luhn_check(num_str: str) -> bool:
         """
         calculate control sum of card
-        :param self:
-        :param num_str: card number
+        :param num_str: number
         :return: is card correct
         """
         total = 0
 
-        for i, digit in enumerate( reversed(num_str) ):
+        for i, digit in enumerate(reversed(num_str)):
             num = int(digit)
             if i % 2 == 1:
                 num *= 2
@@ -146,17 +148,21 @@ class CardManager:
     @staticmethod
     def hashing_card(num: str) -> str:
         """ :return: card sha224-hash """
-        return hashlib.sha224( num.encode() ).hexdigest()
+        return hashlib.sha224(num.encode()).hexdigest()
 
     @staticmethod
-    def find_card_from_hash( bins: list[str], last_nums: str, target_hash: str, free_cores: int = mp.cpu_count() ) -> str:
+    def find_card_from_hash(bins: list[str],
+                            last_nums: str,
+                            target_hash: str,
+                            free_cores: int = mp.cpu_count()) -> str:
         """
-        takes info about card type, last 4 digits, and it's hash to find card number
+        takes info about card type, last 4 digits,
+        and it's hash to find card number
         :param bins:
         :param last_nums:
         :param target_hash:
         :param free_cores:
-        :return: finded card number
+        :return: found card number
         """
         num_range = 10**( 16 - 6 - len(last_nums) )
         core_range = num_range // free_cores
@@ -167,7 +173,10 @@ class CardManager:
             for card_bin in bins:
                 for iteration in range(free_cores):
                     start = core_range * iteration
-                    end = core_range * (iteration + 1) if iteration != free_cores - 1 else num_range
+                    if iteration != (free_cores - 1):
+                        end = core_range * (iteration + 1)
+                    else:
+                        end = num_range
 
                     results.append(p.apply_async(
                         CardManager.hash_search,
@@ -184,7 +193,11 @@ class CardManager:
         return None
 
     @staticmethod
-    def hash_search(card_bin: str, last_nums: str, start: int, end: int, target_hash: str) -> str:
+    def hash_search(card_bin: str,
+                    last_nums: str,
+                    start: int,
+                    end: int,
+                    target_hash: str) -> str:
         """direct search of hash"""
         for middle_nums in range(start, end):
             card = f"{card_bin}{middle_nums}{last_nums}"
@@ -220,7 +233,7 @@ class FileUtils:
             return data
 
     @staticmethod
-    def load_in_txt(path: str, data: dict, enc = 'utf-8') -> None:
+    def load_in_txt(path: str, data: str, enc = 'utf-8') -> None:
         """load data in txt file"""
         with open(path, 'w', encoding= enc) as file:
             file.write(data)
@@ -229,9 +242,10 @@ class FileUtils:
 class Graph:
     """funks for draws graphs"""
     @staticmethod
-    def draw_plot(data: list[ (int, float) ] ) -> None:
+    def draw_plot(data: list[(int, float)]) -> None:
         """
-        simple graphic that shows how long calculates card number, with variable num of cores
+        simple graphic that shows how long calculates
+        card number, with variable num of cores
         :param data:
         :return:
         """
@@ -243,13 +257,19 @@ class Graph:
         plt.xlabel('кол-во процессов')
         plt.title('зависимость времени от числа процессов')
 
-        plt.plot( x,y, color='navy', linestyle='--', marker='x', linewidth=1, markersize=4 )
+        plt.plot(x, y,
+                  color='navy',
+                  linestyle='--',
+                  marker='x',
+                  linewidth=1,
+                  markersize=4)
         plt.show()
 
     @staticmethod
     def draw_bar(data: list[ (int, float) ] ) -> None:
         """
-        simple bar-graphic that shows how long calculates card number, with variable num of cores
+        simple bar-graphic that shows how long calculates
+        card number, with variable num of cores
         :param data:
         :return:
         """
@@ -261,7 +281,7 @@ class Graph:
         plt.xlabel('кол-во процессов')
         plt.title('зависимость времени от числа процессов')
 
-        plt.bar( x, y, color='blue', width=0.5 )
+        plt.bar(x, y, color='blue', width=0.5)
         plt.show()
 
 
@@ -276,7 +296,7 @@ class Parser:
     @staticmethod
     def parse() -> argparse.Namespace:
         """parsing and validate args"""
-        parser = argparse.ArgumentParser(description="program work settings")
+        parser = argparse.ArgumentParser(description="program work sets")
 
         parser.add_argument("-s",
                              "--settings",
@@ -325,7 +345,7 @@ class MainWindow(QMainWindow):
 
         # text widgets
         self.enc_params = QTextEdit()
-        self.enc_params.setText( FileUtils.load_from_txt( sets_path ) )
+        self.enc_params.setText(FileUtils.load_from_txt(sets_path))
         self.enc_params.setReadOnly(True)
         self.result = QTextEdit()
         self.result.setReadOnly(True)
@@ -367,7 +387,9 @@ class MainWindow(QMainWindow):
 
     def decode(self) -> None:
         """finding card number from given hash"""
-        number = CardManager.find_card_from_hash( self.sets['bins'], self.sets['last_numbers'], self.sets['hash'] )
+        number = CardManager.find_card_from_hash(self.sets['bins'],
+                                                 self.sets['last_numbers'],
+                                                 self.sets['hash'])
 
         if number:
             self.result.setText(number)
@@ -379,9 +401,12 @@ class MainWindow(QMainWindow):
         """repeat decoding card in cycle for many cores num"""
         statistic = []
 
-        for cores in range( 1, int( 1.5 * mp.cpu_count() ) ):
+        for cores in range(1, int(1.5 * mp.cpu_count())):
             start = time.time()
-            CardManager.find_card_from_hash( self.sets['bins'], self.sets['last_numbers'], self.sets['hash'], cores )
+            CardManager.find_card_from_hash(self.sets['bins'],
+                                            self.sets['last_numbers'],
+                                            self.sets['hash'],
+                                            cores)
             work_time = time.time() - start
 
             statistic.append(( cores, work_time) )
@@ -396,7 +421,7 @@ class MainWindow(QMainWindow):
             self.result.setText("Некорректный номер карты")
             return
 
-        if CardManager.alg_luhn(card_num):
+        if CardManager.alg_luhn_check(card_num):
             self.result.setText("Карта валидна")
         else:
             self.result.setText("Карта невалидна")
