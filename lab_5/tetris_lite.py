@@ -2,124 +2,12 @@ import pygame as pg
 import random, time, sys
 from pygame.locals import *
 
-fps = 25
-window_w, window_h = 600, 500
-block, cup_h, cup_w = 20, 20, 10
-
-side_freq, down_freq = 0.15, 0.1 # передвижение в сторону и вниз
-
-side_margin = int((window_w - cup_w * block) / 2)
-top_margin = window_h - (cup_h * block) - 5
-
-colors = ((0, 0, 225), (0, 225, 0), (225, 0, 0), (225, 225, 0)) # синий, зеленый, красный, желтый
-lightcolors = ((30, 30, 255), (50, 255, 50), (255, 30, 30), (255, 255, 30)) # светло-синий, светло-зеленый, светло-красный, светло-желтый
-
-white, gray, black  = (255, 255, 255), (185, 185, 185), (0, 0, 0)
-brd_color, bg_color, txt_color, title_color, info_color = white, black, white, colors[3], colors[0]
-
-fig_w, fig_h = 5, 5
-empty = 'o'
-
-figures = {'S': [['ooooo',
-                  'ooooo',
-                  'ooxxo',
-                  'oxxoo',
-                  'ooooo'],
-                 ['ooooo',
-                  'ooxoo',
-                  'ooxxo',
-                  'oooxo',
-                  'ooooo']],
-           'Z': [['ooooo',
-                  'ooooo',
-                  'oxxoo',
-                  'ooxxo',
-                  'ooooo'],
-                 ['ooooo',
-                  'ooxoo',
-                  'oxxoo',
-                  'oxooo',
-                  'ooooo']],
-           'J': [['ooooo',
-                  'oxooo',
-                  'oxxxo',
-                  'ooooo',
-                  'ooooo'],
-                 ['ooooo',
-                  'ooxxo',
-                  'ooxoo',
-                  'ooxoo',
-                  'ooooo'],
-                 ['ooooo',
-                  'ooooo',
-                  'oxxxo',
-                  'oooxo',
-                  'ooooo'],
-                 ['ooooo',
-                  'ooxoo',
-                  'ooxoo',
-                  'oxxoo',
-                  'ooooo']],
-           'L': [['ooooo',
-                  'oooxo',
-                  'oxxxo',
-                  'ooooo',
-                  'ooooo'],
-                 ['ooooo',
-                  'ooxoo',
-                  'ooxoo',
-                  'ooxxo',
-                  'ooooo'],
-                 ['ooooo',
-                  'ooooo',
-                  'oxxxo',
-                  'oxooo',
-                  'ooooo'],
-                 ['ooooo',
-                  'oxxoo',
-                  'ooxoo',
-                  'ooxoo',
-                  'ooooo']],
-           'I': [['ooxoo',
-                  'ooxoo',
-                  'ooxoo',
-                  'ooxoo',
-                  'ooooo'],
-                 ['ooooo',
-                  'ooooo',
-                  'xxxxo',
-                  'ooooo',
-                  'ooooo']],
-           'O': [['ooooo',
-                  'ooooo',
-                  'oxxoo',
-                  'oxxoo',
-                  'ooooo']],
-           'T': [['ooooo',
-                  'ooxoo',
-                  'oxxxo',
-                  'ooooo',
-                  'ooooo'],
-                 ['ooooo',
-                  'ooxoo',
-                  'ooxxo',
-                  'ooxoo',
-                  'ooooo'],
-                 ['ooooo',
-                  'ooooo',
-                  'oxxxo',
-                  'ooxoo',
-                  'ooooo'],
-                 ['ooooo',
-                  'ooxoo',
-                  'oxxoo',
-                  'ooxoo',
-                  'ooooo']]}
 
 def pauseScreen():
         pause = pg.Surface((600, 500), pg.SRCALPHA)   
         pause.fill((0, 0, 255, 127))                        
         display_surf.blit(pause, (0, 0))
+
 
 def main():
     global fps_clock, display_surf, basic_font, big_font
@@ -155,10 +43,10 @@ def runTetris():
             fallingFig = nextFig
             nextFig = getNewFig()
             last_fall = time.time()
-            
 
             if not checkPos(cup, fallingFig):
                 return # если на игровом поле нет свободного места - игра закончена
+              
         quitGame()
         for event in pg.event.get(): 
             if event.type == KEYUP:
@@ -224,7 +112,6 @@ def runTetris():
             fallingFig['y'] += 1
             last_move_down = time.time()
 
-
         if time.time() - last_fall > fall_speed: # свободное падение фигуры            
             if not checkPos(cup, fallingFig, adjY=1): # проверка "приземления" фигуры
                 addToCup(cup, fallingFig) # фигура приземлилась, добавляем ее в содержимое стакана
@@ -243,6 +130,7 @@ def runTetris():
         drawnextFig(nextFig)
         if fallingFig != None:
             drawFig(fallingFig)
+          
         pg.display.update()
         fps_clock.tick(fps)
 
@@ -296,6 +184,7 @@ def calcSpeed(points):
     fall_speed = 0.27 - (level * 0.02)
     return level, fall_speed
 
+  
 def getNewFig():
     # возвращает новую фигуру со случайным цветом и углом поворота
     shape = random.choice(list(figures.keys()))
@@ -339,6 +228,7 @@ def checkPos(cup, fig, adjX=0, adjY=0):
                 return False
     return True
 
+  
 def isCompleted(cup, y):
     # проверяем наличие полностью заполненных рядов
     for x in range(cup_w):
@@ -377,7 +267,8 @@ def drawBlock(block_x, block_y, color, pixelx=None, pixely=None):
     pg.draw.rect(display_surf, colors[color], (pixelx + 1, pixely + 1, block - 1, block - 1), 0, 3)
     pg.draw.rect(display_surf, lightcolors[color], (pixelx + 1, pixely + 1, block - 4, block - 4), 0, 3)
     pg.draw.circle(display_surf, colors[color], (pixelx + block / 2, pixely + block / 2), 5)
-    
+
+  
 def gamecup(cup):
     # граница игрового поля-стакана
     pg.draw.rect(display_surf, brd_color, (side_margin - 4, top_margin - 4, (cup_w * block) + 8, (cup_h * block) + 8), 5)
@@ -387,6 +278,7 @@ def gamecup(cup):
     for x in range(cup_w):
         for y in range(cup_h):
             drawBlock(x, y, cup[x][y])
+
 
 def drawTitle():
     titleSurf = big_font.render('Тетрис Lite', True, title_color)
@@ -417,6 +309,7 @@ def drawInfo(points, level):
     escbRect.topleft = (window_w - 550, 450)
     display_surf.blit(escbSurf, escbRect)
 
+  
 def drawFig(fig, pixelx=None, pixely=None):
     figToDraw = figures[fig['shape']][fig['rotation']]
     if pixelx == None and pixely == None:    
